@@ -72,7 +72,12 @@ builder.Services.AddAuthentication(options =>
 
 
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+   {
+       options.AddPolicy("AdminPolicy", policy =>
+           policy.RequireRole("Admin"));
+   });
+
 builder.Services.AddControllers();
 var app = builder.Build();
 
