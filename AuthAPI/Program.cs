@@ -1,5 +1,6 @@
 using System.Text;
 using AuthAPI.Data;
+using AuthAPI.Email;
 using AuthAPI.JWT;
 using AuthAPI.Models;
 using AuthAPI.Services;
@@ -44,6 +45,9 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+    builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 
 
 builder.Services.AddHttpClient();
