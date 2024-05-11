@@ -24,6 +24,8 @@
         }
     </div>
     <button class="btn btn-primary" @onclick="UpdateRoles">Update Roles</button>
+    <button class="btn btn-danger" @onclick="DeleteUser">Delete User</button>
+    <button class="btn btn-secondary" @onclick="EnableTwoFactor">Enable 2FA</button>
 </div>
 
 @code {
@@ -78,6 +80,34 @@
             var errorData = await response.Content.ReadFromJsonAsync<Dictionary<string, IEnumerable<string>>>();
             var errors = string.Join(", ", errorData.SelectMany(e => e.Value));
             ToastService.ShowError($"Failed to update roles: {errors}");
+        }
+    }
+
+    private async Task DeleteUser()
+    {
+        var response = await Http.DeleteAsync($"api/admin/{User.Email}/delete");
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("User deleted successfully.");
+            // Additional logic to handle UI changes or redirection after deletion
+        }
+        else
+        {
+            ToastService.ShowError("Failed to delete user.");
+        }
+    }
+
+    private async Task EnableTwoFactor()
+    {
+        var response = await Http.PostAsync($"api/admin/{User.Email}/enable-2fa", null);
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("2FA enabled successfully for the user.");
+            // Update local UI if needed
+        }
+        else
+        {
+            ToastService.ShowError("Failed to enable 2FA.");
         }
     }
 

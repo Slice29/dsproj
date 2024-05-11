@@ -33,7 +33,7 @@ namespace UserApiService.Controllers
         }
 
         [HttpGet("{email}/roles")]
-       // [Authorize(Policy = "AdminPolicy")]
+        // [Authorize(Policy = "AdminPolicy")]
         public async Task<IActionResult> GetUserRoles(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -45,38 +45,75 @@ namespace UserApiService.Controllers
             return Ok(roles);
         }
 
-      [HttpPost("{email}/roles/update")]
-public async Task<IActionResult> UpdateUserRoles(string email, [FromBody] UserRolesUpdateDto rolesUpdate)
-{
-    var user = await _userManager.FindByEmailAsync(email);
-    if (user == null)
-    {
-        return NotFound(email);
-    }
+        [HttpPost("{email}/roles/update")]
+        public async Task<IActionResult> UpdateUserRoles(string email, [FromBody] UserRolesUpdateDto rolesUpdate)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound(email);
+            }
 
-    var result = IdentityResult.Success;
+            var result = IdentityResult.Success;
 
-    if (rolesUpdate.RolesToRemove != null && rolesUpdate.RolesToRemove.Any())
-    {
-        var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesUpdate.RolesToRemove);
-        if (!removeResult.Succeeded)
-            result = removeResult;
-    }
+            if (rolesUpdate.RolesToRemove != null && rolesUpdate.RolesToRemove.Any())
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesUpdate.RolesToRemove);
+                if (!removeResult.Succeeded)
+                    result = removeResult;
+            }
 
-    if (rolesUpdate.RolesToAdd != null && rolesUpdate.RolesToAdd.Any())
-    {
-        var addResult = await _userManager.AddToRolesAsync(user, rolesUpdate.RolesToAdd);
-        if (!addResult.Succeeded)
-            result = addResult;
-    }
+            if (rolesUpdate.RolesToAdd != null && rolesUpdate.RolesToAdd.Any())
+            {
+                var addResult = await _userManager.AddToRolesAsync(user, rolesUpdate.RolesToAdd);
+                if (!addResult.Succeeded)
+                    result = addResult;
+            }
 
-    if (!result.Succeeded)
-    {
-        return BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
-    }
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
+            }
 
-    return Ok();
-}
+            return Ok();
+        }
+
+        [HttpDelete("{email}/delete")]
+        public async Task<IActionResult> DeleteUser(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                return Ok();
+            }
+
+            return BadRequest(result.Errors);
+        }
+
+        [HttpPost("{email}/enable-2fa")]
+        public async Task<IActionResult> EnableTwoFactorAuthentication(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+            await _userManager.SetTwoFactorEnabledAsync(user, true);
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+            {
+                return Ok();
+            }
+
+            return BadRequest(result.Errors);
+        }
 
     }
 }

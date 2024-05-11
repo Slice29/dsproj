@@ -43,6 +43,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 .AddUserValidator<UserValidator>()
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+//.AddTokenProvider<CustomTotpSecurityStampBasedTokenProvider<User>>("Email");
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
