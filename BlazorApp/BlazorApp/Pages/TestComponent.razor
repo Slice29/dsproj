@@ -6,7 +6,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
-@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize]
 
 <p>@message</p>
 
@@ -23,13 +23,6 @@
         {
             ToastService.ShowError("You are not authorized to view this page.");
             NavigationManager.NavigateTo("/login");
-            return;
-        }
-
-        if (!user.IsInRole("Admin"))
-        {
-            ToastService.ShowError("You do not have permission to view this page.");
-            NavigationManager.NavigateTo("/");
             return;
         }
 
