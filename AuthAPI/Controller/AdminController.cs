@@ -20,7 +20,7 @@ namespace UserApiService.Controllers
             _userManager = userManager;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{email}")]
         public async Task<IActionResult> GetUser(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -32,8 +32,8 @@ namespace UserApiService.Controllers
             return Ok(user);
         }
 
-        [HttpGet("{id}/roles")]
-        [Authorize(Policy = "AdminPolicy")]
+        [HttpGet("{email}/roles")]
+       // [Authorize(Policy = "AdminPolicy")]
         public async Task<IActionResult> GetUserRoles(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -45,38 +45,38 @@ namespace UserApiService.Controllers
             return Ok(roles);
         }
 
-        [HttpPut("{id}/roles")]
-        [Authorize(Policy = "AdminPolicy")]
-        public async Task<IActionResult> PutUserRole(string email, UserAddRemoveRole param)
-        {
-            var user = await _userManager.FindByIdAsync(email);
-            if (user is null)
-            {
-                return NotFound(email);
-            }
-            try {
-                await _userManager.AddToRoleAsync(user, param.RoleName);
-            } catch(Exception e) {
-                return BadRequest(e.Message);
-            }
-            return Ok();
-        }
+      [HttpPost("{email}/roles/update")]
+public async Task<IActionResult> UpdateUserRoles(string email, [FromBody] UserRolesUpdateDto rolesUpdate)
+{
+    var user = await _userManager.FindByEmailAsync(email);
+    if (user == null)
+    {
+        return NotFound(email);
+    }
 
-        [HttpDelete("{id}/roles")]
-        [Authorize(Policy = "AdminPolicy")]
-        public async Task<IActionResult> DeleteUserRole(string email, UserAddRemoveRole param)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user is null)
-            {
-                return NotFound(email);
-            }
-            try {
-                await _userManager.RemoveFromRoleAsync(user, param.RoleName);
-            } catch(Exception e) {
-                return BadRequest(e.Message);
-            }
-            return Ok();
-        }
+    var result = IdentityResult.Success;
+
+    if (rolesUpdate.RolesToRemove != null && rolesUpdate.RolesToRemove.Any())
+    {
+        var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesUpdate.RolesToRemove);
+        if (!removeResult.Succeeded)
+            result = removeResult;
+    }
+
+    if (rolesUpdate.RolesToAdd != null && rolesUpdate.RolesToAdd.Any())
+    {
+        var addResult = await _userManager.AddToRolesAsync(user, rolesUpdate.RolesToAdd);
+        if (!addResult.Succeeded)
+            result = addResult;
+    }
+
+    if (!result.Succeeded)
+    {
+        return BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
+    }
+
+    return Ok();
+}
+
     }
 }
