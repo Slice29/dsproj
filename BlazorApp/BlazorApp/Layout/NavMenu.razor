@@ -1,4 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -11,15 +13,21 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-            <AuthorizeView>
+        <AuthorizeView>
+            <Authorized>
                 <!-- Navigation items for authorized users -->
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="test">
                         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Test
                     </NavLink>
                 </div>
-            </AuthorizeView>
-        @*     <NotAuthorized> *@
+                <div class="nav-item px-3">
+                    <button class="nav-link btn btn-link" @onclick="Logout">
+                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
                 <!-- Navigation items for unauthorized users -->
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="login">
@@ -31,7 +39,8 @@
                         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Register
                     </NavLink>
                 </div>
-            @* </NotAuthorized> *@
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
 
@@ -45,14 +54,13 @@
         collapseNavMenu = !collapseNavMenu;
     }
 
-    // private async Task Logout()
-    // {
-    //     // Assuming you have a logout method in your authentication provider
-    //     var authProvider = AuthenticationStateProvider as ApiAuthenticationStateProvider;
-    //     if (authProvider != null)
-    //     {
-    //         await authProvider.MarkUserAsLoggedOut();
-    //         NavigationManager.NavigateTo("/", forceLoad: true);
-    //     }
-    // }
+    private async Task Logout()
+    {
+        // Assuming you are using an API or service to handle logout
+        if (AuthenticationStateProvider is ApiAuthenticationStateProvider authProvider)
+        {
+            await authProvider.MarkUserAsLoggedOut();
+        }
+        NavigationManager.NavigateTo("/login", forceLoad: true);
+    }
 }
