@@ -1,0 +1,75 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<h3>Login</h3>
+
+<EditForm Model="@userLogin" OnValidSubmit="@HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <InputText id="email" class="form-control" @bind-Value="@userLogin.Email" />
+    </div>
+    <div class="form-group">
+        <label for="password">Password:</label>
+        <InputText id="password" class="form-control" @bind-Value="@userLogin.Password" type="password" />
+    </div>
+    <div class="form-group">
+        <InputCheckbox @bind-Value="@userLogin.RememberMe" />
+        <label for="rememberMe">Remember me</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@if (loginResult != null)
+{
+    <p class="@loginResultCssClass">@loginResult</p>
+}
+
+@code {
+    private UserLogin userLogin = new UserLogin();
+    private string loginResult;
+    private string loginResultCssClass;
+
+    private async Task HandleLogin()
+    {
+        var response = await Http.PostAsJsonAsync("api/login", userLogin);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var token = await response.Content.ReadAsStringAsync();
+            loginResult = "Login successful.";
+            loginResultCssClass = "text-success";
+
+            // Store the token and update authentication state
+            var authProvider = AuthenticationStateProvider as ApiAuthenticationStateProvider;
+            if (authProvider != null)
+            {
+                await authProvider.MarkUserAsAuthenticated(token);
+            }
+
+            // Optionally redirect the user to a different page
+            NavigationManager.NavigateTo("/", true);
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            loginResult = "Invalid login attempt.";
+            loginResultCssClass = "text-danger";
+        }
+        else
+        {
+            loginResult = "Server error.";
+            loginResultCssClass = "text-danger";
+        }
+    }
+    public class UserLogin
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public bool RememberMe { get; set; }
+    }
+}

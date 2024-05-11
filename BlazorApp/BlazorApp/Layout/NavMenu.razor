@@ -1,0 +1,58 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">BlazorApp</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+            <Authorized>
+                <!-- Navigation items for authorized users -->
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="test">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Test
+                    </NavLink>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <!-- Navigation items for unauthorized users -->
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Login
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="register">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Register
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    // private async Task Logout()
+    // {
+    //     // Assuming you have a logout method in your authentication provider
+    //     var authProvider = AuthenticationStateProvider as ApiAuthenticationStateProvider;
+    //     if (authProvider != null)
+    //     {
+    //         await authProvider.MarkUserAsLoggedOut();
+    //         NavigationManager.NavigateTo("/", forceLoad: true);
+    //     }
+    // }
+}

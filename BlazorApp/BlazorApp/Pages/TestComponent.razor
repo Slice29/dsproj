@@ -1,0 +1,54 @@
+﻿@page "/test"
+@using Blazored.Toast.Services
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IToastService ToastService
+@attribute [Authorize(Roles = "Admin")]
+
+<p>@message</p>
+
+@code {
+    private string message = "Loading...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (!user.Identity.IsAuthenticated)
+        {
+            ToastService.ShowError("You are not authorized to view this page.");
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        if (!user.IsInRole("Admin"))
+        {
+            ToastService.ShowError("You do not have permission to view this page.");
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        try
+        {
+            HttpResponseMessage response = await Http.GetAsync("api/test");
+            if (response.IsSuccessStatusCode)
+            {
+                message = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                message = $"Error: {response.StatusCode}";
+                ToastService.ShowError($"API access error: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Exception occurred: {ex.Message}";
+            ToastService.ShowError($"An error occurred: {ex.Message}");
+        }
+    }
+}
