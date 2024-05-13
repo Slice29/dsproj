@@ -9,7 +9,9 @@ using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,19 +38,41 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.User.RequireUniqueEmail = true;
-    options.User.AllowedUserNameCharacters = null;
 })
-// * Validator used to allow storing the Email as username
 .AddRoles<IdentityRole>()
-.AddUserValidator<UserValidator>()
 .AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+.AddUserValidator<UserValidator>();
+
 //.AddTokenProvider<CustomTotpSecurityStampBasedTokenProvider<User>>("Email");
+
+// Configure the default cookie used by the sign-in manager
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = false;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+    options.LoginPath = "/login";  // Adjust according to your application's route
+    options.LogoutPath = "/logout";
+    options.AccessDeniedPath = "/access-denied";
+    options.SlidingExpiration = true;
+});
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("MyPolicy", builder =>
+    {
+        builder.WithOrigins("https://localhost:7152")
+               .AllowAnyHeader()
+               .AllowAnyMethod()
+               .AllowCredentials(); // Important for cookies
+    });
+});
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
-    builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 
 
 builder.Services.AddHttpClient();
@@ -60,20 +84,39 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, jwtOptions =>
 {
-   options.TokenValidationParameters = new TokenValidationParameters
-           {
-               ValidateIssuer = true,
-               ValidateAudience = false,
-               ValidateLifetime = true,
-               ValidateIssuerSigningKey = true,
-
-               ValidIssuer = Environment.GetEnvironmentVariable("ECT_JWT_ISSUER"), // This should match the issuer used while creating the token
-               IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("ECT_JWT_KEY"))) // This should be the same secret key used to sign the JWT
-           };
+    jwtOptions.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = Environment.GetEnvironmentVariable("ECT_JWT_ISSUER"),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("ECT_JWT_KEY")))
+    };
+})
+.AddCookie(options =>
+{
+    options.Cookie.HttpOnly = false;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.LoginPath = "/login";
 });
 
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = false;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);  // Adjust based on your needs
+    options.LoginPath = "/api/login";  // Ensure you have a corresponding endpoint
+    options.LogoutPath = "/api/login/logout";
+    options.SlidingExpiration = true;
+    options.Cookie.SameSite = SameSiteMode.None;  // Adjust for your cross-site needs
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None;  // Secure cookies in production
+});
 
 
 
@@ -91,13 +134,8 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-
+app.UseCors("MyPolicy");
 app.UseRouting();
-
-app.UseCors(builder =>
-    builder.AllowAnyOrigin()
-           .AllowAnyMethod()
-           .AllowAnyHeader());
 
 app.UseAuthentication();
 app.UseAuthorization();

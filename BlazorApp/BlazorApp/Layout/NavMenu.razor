@@ -1,6 +1,10 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+﻿@using BlazorApp.Models
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
+@inject HttpClient Http
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -13,6 +17,11 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
+        <div class="nav-item px-3">
+            <button class="nav-link btn btn-link" @onclick="Logout">
+                <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
+            </button>
+        </div>
         <AuthorizeView>
             <Authorized>
                 <!-- Navigation items for authorized users -->
@@ -21,11 +30,7 @@
                         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Test
                     </NavLink>
                 </div>
-                <div class="nav-item px-3">
-                    <button class="nav-link btn btn-link" @onclick="Logout">
-                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
-                    </button>
-                </div>
+               
             </Authorized>
             <NotAuthorized>
                 <!-- Navigation items for unauthorized users -->
@@ -45,6 +50,12 @@
 </div>
 
 @code {
+
+    private async Task Clear2FAState()
+    {
+        await LocalStorage.RemoveItemAsync("awaitingTwoFactorCode");
+        await LocalStorage.RemoveItemAsync("userEmailFor2FA");
+    }
     private bool collapseNavMenu = true;
 
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
@@ -56,6 +67,15 @@
 
     private async Task Logout()
     {
+        var userLogin = new UserSearch();
+        if (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA") is not null)
+        {
+            userLogin.Email = userLogin.Email = (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA")).Trim('"', '\'');
+            var response = await Http.PostAsJsonAsync("api/login/logout", userLogin);
+        }
+      
+        
+        await Clear2FAState();
         // Assuming you are using an API or service to handle logout
         if (AuthenticationStateProvider is ApiAuthenticationStateProvider authProvider)
         {

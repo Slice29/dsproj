@@ -1,29 +1,45 @@
 ﻿@page "/login"
 @using Microsoft.AspNetCore.Components.Authorization
+@using Blazored.LocalStorage
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILocalStorageService LocalStorage
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <h3>Login</h3>
 
-<EditForm Model="@userLogin" OnValidSubmit="@HandleLogin">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+@if (!awaitingTwoFactorCode)
+{
+    <EditForm Model="@userLogin" OnValidSubmit="@HandleLogin">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-    <div class="form-group">
-        <label for="email">Email:</label>
-        <InputText id="email" class="form-control" @bind-Value="@userLogin.Email" />
-    </div>
-    <div class="form-group">
-        <label for="password">Password:</label>
-        <InputText id="password" class="form-control" @bind-Value="@userLogin.Password" type="password" />
-    </div>
-    <div class="form-group">
-        <InputCheckbox @bind-Value="@userLogin.RememberMe" />
-        <label for="rememberMe">Remember me</label>
-    </div>
-    <button type="submit" class="btn btn-primary">Login</button>
-</EditForm>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <InputText id="email" class="form-control" @bind-Value="@userLogin.Email" />
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <InputText id="password" class="form-control" @bind-Value="@userLogin.Password" type="password" />
+        </div>
+        <div class="form-group">
+            <InputCheckbox @bind-Value="@userLogin.RememberMe" />
+            <label for="rememberMe">Remember me</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </EditForm>
+}
+else
+{
+    <EditForm Model="@twoFactorCode" OnValidSubmit="@HandleTwoFactorAuthentication">
+        <div class="form-group">
+            <label for="code">Enter your 2FA code:</label>
+            <InputText id="code" class="form-control" @bind-Value="@twoFactorCode.Code" />
+        </div>
+        <button type="submit" class="btn btn-primary">Verify Code</button>
+    </EditForm>
+}
 
 @if (loginResult != null)
 {
@@ -32,44 +48,150 @@
 
 @code {
     private UserLogin userLogin = new UserLogin();
+    private TwoFactorVerification twoFactorCode = new TwoFactorVerification();
+    private bool awaitingTwoFactorCode = false;
     private string loginResult;
     private string loginResultCssClass;
+
+    protected override async Task OnInitializedAsync()
+    {
+        awaitingTwoFactorCode = await LocalStorage.GetItemAsync<bool>("awaitingTwoFactorCode");
+        if (awaitingTwoFactorCode)
+        {
+            twoFactorCode.Email = await LocalStorage.GetItemAsync<string>("userEmailFor2FA");
+        }
+    }
 
     private async Task HandleLogin()
     {
         var response = await Http.PostAsJsonAsync("api/login", userLogin);
-
         if (response.IsSuccessStatusCode)
         {
-            var token = await response.Content.ReadAsStringAsync();
-            loginResult = "Login successful.";
-            loginResultCssClass = "text-success";
+            var responseContent = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-            // Store the token and update authentication state
-            var authProvider = AuthenticationStateProvider as ApiAuthenticationStateProvider;
-            if (authProvider != null)
+            if (responseContent?.Message?.Contains("Please verify") == true)
             {
-                await authProvider.MarkUserAsAuthenticated(token);
-            }
+                awaitingTwoFactorCode = true;
+                await LocalStorage.SetItemAsync("awaitingTwoFactorCode", true);
+                await LocalStorage.SetItemAsync("userEmailFor2FA", userLogin.Email);
 
-            // Optionally redirect the user to a different page
-            NavigationManager.NavigateTo("/", true);
-        }
-        else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            loginResult = "Invalid login attempt.";
-            loginResultCssClass = "text-danger";
+                // Optionally, store any token or state sent by the server here
+                await LocalStorage.SetItemAsync("authToken", responseContent.Token);
+
+                loginResult = responseContent.Message ?? "Two-factor authentication required.";
+                loginResultCssClass = "text-warning";
+            }
+            else
+            {
+                await Clear2FAState();
+                await ProcessSuccessfulLogin(responseContent.Token);
+            }
         }
         else
         {
-            loginResult = "Server error.";
+            await HandleErrorResponse(response);
+        }
+    }
+
+
+
+    private async Task HandleErrorResponse(HttpResponseMessage response)
+    {
+        var responseContent = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        // Handle different types of error responses based on the status code
+        switch (response.StatusCode)
+        {
+            case System.Net.HttpStatusCode.Forbidden:
+                loginResult = "Two-factor authentication required.";
+                loginResultCssClass = "text-warning";
+                break;
+            case System.Net.HttpStatusCode.Locked:
+                loginResult = "Account is locked. Please try again later.";
+                loginResultCssClass = "text-danger";
+                break;
+            case System.Net.HttpStatusCode.Unauthorized:
+                loginResult = "Login not allowed. Ensure the account has necessary permissions and is verified.";
+                loginResultCssClass = "text-danger";
+                break;
+            default:
+                loginResult = responseContent.Message ?? "Invalid login attempt.";
+                loginResultCssClass = "text-danger";
+                break;
+        }
+    }
+
+    private async Task HandleTwoFactorAuthentication()
+    {
+        twoFactorCode.RememberClient = false;
+        twoFactorCode.Email = (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA")).Trim('"', '\'');
+
+        var token = await LocalStorage.GetItemAsStringAsync("authToken");
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/login/verify-2fa");
+        request.Content = JsonContent.Create(twoFactorCode);
+
+        // Include the token in the Authorization header or as a part of the request body
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await Http.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            await Clear2FAState();
+            await ProcessSuccessfulLogin(await response.Content.ReadAsStringAsync());
+            loginResult = "2FA Verification successful, logged in.";
+            loginResultCssClass = "text-success";
+        }
+        else
+        {
+            loginResult = "Invalid 2FA code.";
             loginResultCssClass = "text-danger";
         }
     }
+
+    private async Task ProcessSuccessfulLogin(string token)
+    {
+        await LocalStorage.SetItemAsync("authToken", token);  // Store the JWT in local storage
+        var authProvider = AuthenticationStateProvider as ApiAuthenticationStateProvider;
+        if (authProvider != null)
+        {
+            await authProvider.MarkUserAsAuthenticated(token);
+        }
+        NavigationManager.NavigateTo("/", true);  // Navigate to home page upon successful login
+    }
+
+    private async Task Clear2FAState()
+    {
+        await LocalStorage.RemoveItemAsync("awaitingTwoFactorCode");
+        await LocalStorage.RemoveItemAsync("userEmailFor2FA");
+    }
+
     public class UserLogin
     {
         public string Email { get; set; }
         public string Password { get; set; }
         public bool RememberMe { get; set; }
+    }
+
+    public class TwoFactorVerification
+    {
+        public string Email { get; set; }
+        public string Code { get; set; }
+        public bool RememberClient { get; set; }
+    }
+
+    public class LoginResponse
+    {
+        public string Message { get; set; }
+        public string Token { get; set; }
+    }
+
+    public async Task<string> GetCookie(string name)
+    {
+        return await JSRuntime.InvokeAsync<string>("blazorInterop.getCookie", name);
+    }
+
+    public async Task SetCookie(string name, string value, int days)
+    {
+        // Correctly passing three parameters to the JavaScript function
+        await JSRuntime.InvokeVoidAsync("blazorInte rop.setCookie", name, value, days);
     }
 }

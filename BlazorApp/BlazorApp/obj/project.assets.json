@@ -2901,6 +2901,7 @@
       "Microsoft.AspNetCore.Components.WebAssembly.Authentication >= 8.0.4",
       "Microsoft.AspNetCore.Components.WebAssembly.DevServer >= 8.0.0",
       "Microsoft.Extensions.Http >= 8.0.0",
+      "Microsoft.JSInterop >= 8.0.4",
       "Microsoft.NET.ILLink.Tasks >= 8.0.0",
       "Microsoft.NET.Sdk.WebAssembly.Pack >= 8.0.3",
       "System.IdentityModel.Tokens.Jwt >= 7.5.1"
@@ -2979,6 +2980,10 @@
           "Microsoft.Extensions.Http": {
             "target": "Package",
             "version": "[8.0.0, )"
+          },
+          "Microsoft.JSInterop": {
+            "target": "Package",
+            "version": "[8.0.4, )"
           },
           "Microsoft.NET.ILLink.Tasks": {
             "suppressParent": "All",

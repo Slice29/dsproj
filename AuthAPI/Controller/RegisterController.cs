@@ -33,8 +33,7 @@ namespace AuthAPI.Controller
 
             if (result.Succeeded)
             {
-                // Enable 2FA - set it as required directly after creating the user
-              //  user.TwoFactorEnabled = true;
+               
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
                 {
