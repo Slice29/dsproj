@@ -1,0 +1,120 @@
+﻿@using BlazorUI.Models
+@using Blazored.Toast.Services
+@inject HttpClient Http
+@inject IToastService ToastService
+
+<div style="border: 1px solid gray; background-color: #f8f9fa; padding: 15px; margin-top: 15px;">
+    <h5>User Details</h5>
+    <p><strong>Email:</strong> @User.Email</p>
+
+    @if (Roles.Any())
+    {
+        <p><strong>Roles:</strong> @string.Join(", ", Roles)</p>
+    }
+    else
+    {
+        <p>The user doesn't have any roles.</p>
+    }
+
+    <div>
+        @foreach (var role in availableRoles)
+        {
+            <input type="checkbox" checked="@role.IsChecked" @onchange="@(() => HandleRoleChange(role))" />
+            <label>@role.Name</label>
+        }
+    </div>
+    <button class="btn btn-primary" @onclick="UpdateRoles">Update Roles</button>
+    <button class="btn btn-danger" @onclick="DeleteUser">Delete User</button>
+    <button class="btn btn-secondary" @onclick="EnableTwoFactor">Enable 2FA</button>
+</div>
+
+@code {
+    [Parameter] public UserDto User { get; set; }
+    [Parameter] public List<string> Roles { get; set; }
+
+    private List<RoleOption> availableRoles = new List<RoleOption>
+    {
+        new RoleOption { Name = "Admin", IsChecked = false, InitialState = false },
+        new RoleOption { Name = "PromoUser", IsChecked = false, InitialState = false }
+    };
+
+    protected override void OnParametersSet()
+    {
+        foreach (var role in availableRoles)
+        {
+            role.IsChecked = Roles.Contains(role.Name);
+            role.InitialState = role.IsChecked; // Ensure the initial state is updated
+        }
+    }
+
+    private void HandleRoleChange(RoleOption role)
+    {
+        role.IsChecked = !role.IsChecked; // Toggle the role check state
+        StateHasChanged(); // Force UI update if necessary
+    }
+
+    private async Task UpdateRoles()
+    {
+        var rolesToAdd = availableRoles.Where(r => r.IsChecked && !r.InitialState).Select(r => r.Name).ToList();
+        var rolesToRemove = availableRoles.Where(r => !r.IsChecked && r.InitialState).Select(r => r.Name).ToList();
+
+        var updateDto = new
+        {
+            RolesToAdd = rolesToAdd,
+            RolesToRemove = rolesToRemove
+        };
+
+        var response = await Http.PostAsJsonAsync($"api/admin/{User.Email}/roles/update", updateDto);
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("Roles updated successfully.");
+            foreach (var role in availableRoles)
+            {
+                role.InitialState = role.IsChecked; // Reset the initial state after successful update
+            }
+            // Refresh roles from the backend or simply update local state
+            Roles = availableRoles.Where(r => r.IsChecked).Select(r => r.Name).ToList();
+        }
+        else
+        {
+            var errorData = await response.Content.ReadFromJsonAsync<Dictionary<string, IEnumerable<string>>>();
+            var errors = string.Join(", ", errorData.SelectMany(e => e.Value));
+            ToastService.ShowError($"Failed to update roles: {errors}");
+        }
+    }
+
+    private async Task DeleteUser()
+    {
+        var response = await Http.DeleteAsync($"api/admin/{User.Email}/delete");
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("User deleted successfully.");
+            // Additional logic to handle UI changes or redirection after deletion
+        }
+        else
+        {
+            ToastService.ShowError("Failed to delete user.");
+        }
+    }
+
+    private async Task EnableTwoFactor()
+    {
+        var response = await Http.PostAsync($"api/admin/{User.Email}/enable-2fa", null);
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("2FA enabled successfully for the user.");
+            // Update local UI if needed
+        }
+        else
+        {
+            ToastService.ShowError("Failed to enable 2FA.");
+        }
+    }
+
+    public class RoleOption
+    {
+        public string Name { get; set; }
+        public bool IsChecked { get; set; }
+        public bool InitialState { get; set; }
+    }
+}
