@@ -88,7 +88,7 @@ namespace AuthAPI.Controller
             {
                 var JwtHelper = new JwtHelper(_tokenService, _userManager);
                 var jwtToken = await JwtHelper.GenerateTokenAsync(user);
-                return Ok(new { Token = jwtToken });
+                return Ok(jwtToken);
             }
             else if (result.IsLockedOut)
             {

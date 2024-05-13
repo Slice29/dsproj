@@ -24,18 +24,22 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         try
         {
             var token = await _localStorage.GetItemAsStringAsync("authToken");
+            if(token != null)
+            token = RemoveJsonFormatting(token);
             if (string.IsNullOrEmpty(token))
             {
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())); // Unauthenticated state
-                
             }
 
             if (!IsJwt(token))
             {
-                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())); // Handle 2FA state or invalid JWT
+                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())); // Handle invalid JWT
             }
 
+            // Parse the JWT for claims
             var identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "Bearer");
+
+            // Attempt to get and add role claims if they exist
             var userRoles = await _localStorage.GetItemAsStringAsync("userRoles");
             if (!string.IsNullOrEmpty(userRoles))
             {
@@ -46,23 +50,29 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
                 }
             }
 
+            // Create an authenticated state using the identity which includes the parsed claims
             return new AuthenticationState(new ClaimsPrincipal(identity));
         }
         catch (Exception ex)
         {
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())); // Error state
+            // Log the exception, if logging is setup
+            // Example: _logger.LogError("Failed to get authentication state: {Exception}", ex);
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())); // Return error state
         }
     }
     private bool IsJwt(string token)
     {
+        // Preprocessing to remove unwanted characters
+        token = RemoveJsonFormatting(token);
+
         var parts = token.Split('.');
         if (parts.Length == 3)
         {
             try
             {
-                var header = Convert.FromBase64String(parts[0]);
-                var payload = Convert.FromBase64String(parts[1]);
-                // further checks could be added here to validate structure
+                var header = DecodeBase64Url(parts[0]);
+                var payload = DecodeBase64Url(parts[1]);
+                // Additional structural checks can be placed here if necessary
                 return true;
             }
             catch
@@ -72,7 +82,37 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         }
         return false;
     }
+    private string RemoveJsonFormatting(string input)
+    {
+        // Remove all JSON-specific characters and escaped characters that aren't part of a standard JWT
+        var output = input
+            .Replace("\\u0022", "") // Remove unicode escaped quotes
+            .Replace("\\", "")      // Remove backslashes
+            .Replace("\"", "")      // Remove quotes
+            .Replace("{", "")       // Remove curly braces
+            .Replace("}", "")
+            .Replace("token:", "")
+            .Replace("/", "");      // Remove slashes
 
+        return output;
+    }
+
+    private byte[] DecodeBase64Url(string input)
+    {
+        string output = input;
+        output = output.Replace('-', '+'); // 62nd char of encoding
+        output = output.Replace('_', '/'); // 63rd char of encoding
+
+        switch (output.Length % 4) // Pad with '=' chars
+        {
+            case 0: break; // No pad chars in this case
+            case 2: output += "=="; break; // Two pad chars
+            case 3: output += "="; break; // One pad char
+            default: throw new Exception("Illegal base64url string!");
+        }
+
+        return Convert.FromBase64String(output); // Standard base64 decoder
+    }
     private AuthenticationState BuildAuthenticationState(string token)
     {
         var identity = new ClaimsIdentity();

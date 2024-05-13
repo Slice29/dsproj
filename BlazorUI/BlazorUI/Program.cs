@@ -1,6 +1,7 @@
 using Blazored.LocalStorage;
 using Blazored.Toast;
 using BlazorUI.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using System;
 using System.Net.Http;
 
@@ -15,7 +16,7 @@ builder.Services.AddBlazoredToast();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddHttpClient();
-
+builder.Services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
 
 // Set up HttpClient for different environments
 if (builder.Environment.IsDevelopment())

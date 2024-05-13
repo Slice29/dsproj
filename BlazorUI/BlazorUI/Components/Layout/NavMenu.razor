@@ -17,11 +17,7 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <button class="nav-link btn btn-link" @onclick="Logout">
-                <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
-            </button>
-        </div>
+       
         <AuthorizeView>
             <Authorized>
                 <!-- Navigation items for authorized users -->
@@ -30,7 +26,11 @@
                         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Test
                     </NavLink>
                 </div>
-
+                <div class="nav-item px-3">
+                    <button class="nav-link btn btn-link" @onclick="Logout">
+                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
+                    </button>
+                </div>
             </Authorized>
             <NotAuthorized>
                 <!-- Navigation items for unauthorized users -->
