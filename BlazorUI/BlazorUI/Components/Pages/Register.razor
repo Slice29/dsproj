@@ -1,0 +1,80 @@
+﻿@page "/register"
+@using System.ComponentModel.DataAnnotations
+@inject HttpClient Http
+
+<h3>Register</h3>
+
+<EditForm Model="@userRegister" OnValidSubmit="@HandleRegister" FormName="register-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <InputText id="email" class="form-control" @bind-Value="userRegister.Email" />
+    </div>
+    <div class="form-group">
+        <label for="password">Password:</label>
+        <InputText id="password" class="form-control" @bind-Value="userRegister.Password" type="password" />
+    </div>
+    <div class="form-group">
+        <label for="phone">Phone Number:</label>
+        <InputText id="phone" class="form-control" @bind-Value="userRegister.PhoneNumber" />
+    </div>
+    <div class="form-group">
+        <label for="favoriteGame">Favorite Video Game:</label>
+        <InputText id="favoriteGame" class="form-control" @bind-Value="userRegister.FavoriteVideoGame" />
+    </div>
+    <button type="submit" class="btn btn-success">Register</button>
+</EditForm>
+
+@if (registrationResult != null)
+{
+    <p class="@resultCssClass">@registrationResult</p>
+}
+
+
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        userRegister ??= new();
+    }
+    [SupplyParameterFromForm]
+    private UserRegister? userRegister { get; set; }
+    private string registrationResult;
+    private string resultCssClass = "text-success";
+
+    private async Task HandleRegister()
+    {
+        var response = await Http.PostAsJsonAsync("api/register", userRegister);
+
+        if (response.IsSuccessStatusCode)
+        {
+            registrationResult = "Registration successful!";
+            resultCssClass = "text-success";
+        }
+        else
+        {
+            registrationResult = "Failed to register. Please check the details and try again.";
+            resultCssClass = "text-danger";
+        }
+    }
+
+    public class UserRegister
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        [Required]
+        [MinLength(6, ErrorMessage = "Password must be at least 6 characters long.")]
+        public string Password { get; set; }
+
+        public string PhoneNumber { get; set; }
+
+        [Required]
+        public string FavoriteVideoGame { get; set; }
+    }
+}
+ 

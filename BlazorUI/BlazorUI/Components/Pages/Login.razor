@@ -10,7 +10,6 @@
 @if (!awaitingTwoFactorCode)
 {
     <EditForm Model="userLogin"  OnValidSubmit="HandleLogin" FormName="login-form">
-       @*  <AntiforgeryToken /> *@
         <DataAnnotationsValidator />
         <ValidationSummary />
 
