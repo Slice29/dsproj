@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using AuthAPI.MyRateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,6 +108,17 @@ builder.Services.AddAuthentication(options =>
 });
 
 
+builder.Services.AddRateLimiter(options => {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+});
+builder.Services.AddSingleton(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<ExponentialBackoffRateLimiter>>();
+    return new ExponentialBackoffRateLimiter(permitLimit: 2, logger);
+});
+
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = false;
@@ -134,6 +146,15 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+
+app.UseRateLimiter();
+
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/login/verify-2fa"), appBuilder =>
+{
+    var logger = appBuilder.ApplicationServices.GetRequiredService<ILogger<ExponentialBackoffRateLimitingMiddleware>>();
+    appBuilder.UseMiddleware<ExponentialBackoffRateLimitingMiddleware>(logger);
+});
+
 app.UseCors("MyPolicy");
 app.UseRouting();
 

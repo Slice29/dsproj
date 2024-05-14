@@ -9,7 +9,7 @@ namespace RateLimitAppDemo.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [EnableRateLimiting("fixed")]
+   // [EnableRateLimiting("fixed")]
     public class WeatherForecastController : ControllerBase
     {
         private static readonly string[] Summaries = new[]
@@ -18,15 +18,9 @@ namespace RateLimitAppDemo.Controllers
         };
 
         [HttpGet]
-        public IEnumerable<WeatherForecast> Get()
+        public async Task<IActionResult> Get()
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-            (
-                DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                Random.Shared.Next(-20, 55),
-                Summaries[Random.Shared.Next(Summaries.Length)]
-            ))
-            .ToArray();
+            return NotFound("asfas");
         }
     }
 

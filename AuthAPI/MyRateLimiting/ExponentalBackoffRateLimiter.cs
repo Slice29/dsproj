@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace RateLimitAppDemo.MyRateLimiting
+namespace AuthAPI.MyRateLimiting
 {
     using System.Collections.Concurrent;
 
