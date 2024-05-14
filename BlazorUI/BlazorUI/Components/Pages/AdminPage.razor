@@ -41,12 +41,6 @@ else if (notFound)
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
-        // if (!user.Identity.IsAuthenticated)
-        // {
-        //     ToastService.ShowError("You are not authorized to view this page.");
-        //     NavigationManager.NavigateTo("/login");
-        // }
     }
 
     protected async Task GetUserWithRoles()

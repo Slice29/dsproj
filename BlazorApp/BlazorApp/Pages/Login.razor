@@ -5,7 +5,6 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavigationManager
-@inject IJSRuntime JSRuntime
 
 <h3>Login</h3>
 
@@ -65,6 +64,7 @@ else
     private async Task HandleLogin()
     {
         var response = await Http.PostAsJsonAsync("api/login", userLogin);
+
         if (response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadFromJsonAsync<LoginResponse>();
@@ -75,8 +75,15 @@ else
                 await LocalStorage.SetItemAsync("awaitingTwoFactorCode", true);
                 await LocalStorage.SetItemAsync("userEmailFor2FA", userLogin.Email);
 
-                // Optionally, store any token or state sent by the server here
-                await LocalStorage.SetItemAsync("authToken", responseContent.Token);
+                // Save the cookie from the response headers
+                if (response.Headers.TryGetValues("Set-Cookie", out var cookieValues))
+                {
+                    var cookie = cookieValues.FirstOrDefault(); // Select the relevant cookie if multiple are present
+                    if (!string.IsNullOrEmpty(cookie))
+                    {
+                        await LocalStorage.SetItemAsync("authCookie", cookie);
+                    }
+                }
 
                 loginResult = responseContent.Message ?? "Two-factor authentication required.";
                 loginResultCssClass = "text-warning";
@@ -92,7 +99,6 @@ else
             await HandleErrorResponse(response);
         }
     }
-
 
 
     private async Task HandleErrorResponse(HttpResponseMessage response)
@@ -125,18 +131,23 @@ else
         twoFactorCode.RememberClient = false;
         twoFactorCode.Email = (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA")).Trim('"', '\'');
 
-        var token = await LocalStorage.GetItemAsStringAsync("authToken");
         var request = new HttpRequestMessage(HttpMethod.Post, "api/login/verify-2fa");
         request.Content = JsonContent.Create(twoFactorCode);
 
-        // Include the token in the Authorization header or as a part of the request body
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        // Retrieve and attach the cookie to the request headers
+        var cookie = await LocalStorage.GetItemAsStringAsync("authCookie");
+        if (!string.IsNullOrEmpty(cookie))
+        {
+            request.Headers.Add("Cookie", cookie);
+        }
 
         var response = await Http.SendAsync(request);
+        var token = await response.Content.ReadAsStringAsync();
+
         if (response.IsSuccessStatusCode)
         {
             await Clear2FAState();
-            await ProcessSuccessfulLogin(await response.Content.ReadAsStringAsync());
+            await ProcessSuccessfulLogin(token);
             loginResult = "2FA Verification successful, logged in.";
             loginResultCssClass = "text-success";
         }
@@ -182,16 +193,5 @@ else
     {
         public string Message { get; set; }
         public string Token { get; set; }
-    }
-
-    public async Task<string> GetCookie(string name)
-    {
-        return await JSRuntime.InvokeAsync<string>("blazorInterop.getCookie", name);
-    }
-
-    public async Task SetCookie(string name, string value, int days)
-    {
-        // Correctly passing three parameters to the JavaScript function
-        await JSRuntime.InvokeVoidAsync("blazorInte rop.setCookie", name, value, days);
     }
 }
