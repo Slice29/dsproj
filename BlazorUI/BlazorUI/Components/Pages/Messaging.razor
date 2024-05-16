@@ -16,8 +16,12 @@ else
 @code {
     private PlaceholderResponse? responseMessage;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        responseMessage = await PlaceholderPublisher.GetMyResponse("test message");
+        if (firstRender)
+        {
+            responseMessage = await PlaceholderPublisher.GetMyResponse("test message");
+            StateHasChanged(); // Request a re-render
+        }
     }
 }

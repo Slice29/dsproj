@@ -34,7 +34,7 @@ builder.Services.AddMassTransit(mt =>
         cfg.ConfigureEndpoints(context);
     });
 
-    mt.AddConsumersFromNamespaceContaining<TestConsumer>();
+    mt.AddConsumersFromNamespaceContaining<TestConsumerDefinition>();
 
 });
 

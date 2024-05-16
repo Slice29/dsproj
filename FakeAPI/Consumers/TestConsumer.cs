@@ -15,4 +15,11 @@ namespace FakeAPI.Consumers
             
         }
     }
+    public class TestConsumerDefinition: ConsumerDefinition<TestConsumer>
+    {
+        protected override void ConfigureConsumer(IReceiveEndpointConfigurator endpointConfigurator, IConsumerConfigurator<TestConsumer> consumerConfigurator)
+        {
+            endpointConfigurator.UseFilter(new MyFilter());
+        }
+    }
 }

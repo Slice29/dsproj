@@ -5,7 +5,6 @@ using Blazored.LocalStorage;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.JSInterop; // Import the JS interop namespace
 
-
 public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly HttpClient _httpClient;
@@ -24,8 +23,8 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         try
         {
             var token = await _localStorage.GetItemAsStringAsync("authToken");
-            if(token != null)
-            token = RemoveJsonFormatting(token);
+            if (token != null)
+                token = RemoveJsonFormatting(token);
             if (string.IsNullOrEmpty(token))
             {
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())); // Unauthenticated state
@@ -60,6 +59,27 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())); // Return error state
         }
     }
+
+    public async Task<bool> IsUserAdminAsync()
+    {
+        var token = await _localStorage.GetItemAsStringAsync("authToken");
+        if (string.IsNullOrEmpty(token))
+        {
+            return false;
+        }
+
+        token = RemoveJsonFormatting(token);
+        if (!IsJwt(token))
+        {
+            return false;
+        }
+
+        var claims = ParseClaimsFromJwt(token);
+        var adminClaim = claims.FirstOrDefault(c => c.Type == "admin");
+
+        return adminClaim != null && adminClaim.Value == "true";
+    }
+
     private bool IsJwt(string token)
     {
         // Preprocessing to remove unwanted characters
@@ -82,6 +102,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         }
         return false;
     }
+
     private string RemoveJsonFormatting(string input)
     {
         // Remove all JSON-specific characters and escaped characters that aren't part of a standard JWT
@@ -113,6 +134,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 
         return Convert.FromBase64String(output); // Standard base64 decoder
     }
+
     private AuthenticationState BuildAuthenticationState(string token)
     {
         var identity = new ClaimsIdentity();

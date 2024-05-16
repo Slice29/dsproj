@@ -18,8 +18,8 @@ builder.Services.AddBlazoredToast();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<ApiAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
-
 
 var config = builder.Configuration;
 
@@ -42,7 +42,8 @@ builder.Services.AddMassTransit(mt =>
     mt.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(rabbitUri);
-
+        cfg.ConfigureSend(x => x.UseExecute(context => { context.Headers.Set("auth", "1234"); } ));
+        cfg.ConfigurePublish(x => x.UseExecute(context => { context.Headers.Set("auth", "1234"); }));
         cfg.ConfigureEndpoints(context);
     });
 
