@@ -1,7 +1,64 @@
 ﻿@page "/"
+@using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService LocalStorage
 
-<PageTitle>Home</PageTitle>
+<h3>Welcome to BlazorApp</h3>
 
-<h1>Hello, world!</h1>
+<AuthorizeView>
+    <Authorized>
+        <p>Welcome, authenticated user!</p>
+        <!-- Add your authenticated user content here -->
+    </Authorized>
+    <NotAuthorized>
+        <p>Please log in.</p>
+        <!-- Add your non-authenticated user content here -->
+    </NotAuthorized>
+</AuthorizeView>
 
-Welcome to your new app.
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "token")]
+    public string Token { get; set; }
+
+    private bool _firstRender = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_firstRender && !string.IsNullOrEmpty(Token))
+        {
+            _firstRender = false;
+            await ProcessSuccessfulLogin(Token);
+        }
+        else if (_firstRender)
+        {
+            _firstRender = false;
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity.IsAuthenticated)
+            {
+                Console.WriteLine($"User is authenticated: {user.Identity.Name}");
+            }
+            else
+            {
+                Console.WriteLine("User is not authenticated.");
+            }
+        }
+    }
+
+    private async Task ProcessSuccessfulLogin(string token)
+    {
+        await LocalStorage.SetItemAsync("authToken", token);  // Store the JWT in local storage
+        var authProvider = AuthenticationStateProvider as ApiAuthenticationStateProvider;
+        if (authProvider != null)
+        {
+            await authProvider.MarkUserAsAuthenticated(token);
+        }
+
+        // Redirect to the home page without the token in the URL
+        NavigationManager.NavigateTo("/", true);
+    }
+}

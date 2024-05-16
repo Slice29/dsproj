@@ -1,0 +1,43 @@
+﻿@page "/azure-login"
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+
+<h3>Azure AD Login</h3>
+
+<button @onclick="RedirectToAzureAD">Login with Azure AD</button>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Token { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(Token))
+        {
+            await ProcessSuccessfulLogin(Token);
+        }
+    }
+
+    private async Task RedirectToAzureAD()
+    {
+        var response = await Http.GetStringAsync("api/initiateadflow");
+        NavigationManager.NavigateTo(response, forceLoad: true);
+    }
+
+    private async Task ProcessSuccessfulLogin(string token)
+    {
+        await LocalStorage.SetItemAsync("authToken", token);  // Store the JWT in local storage
+        var authProvider = AuthenticationStateProvider as ApiAuthenticationStateProvider;
+        if (authProvider != null)
+        {
+            await authProvider.MarkUserAsAuthenticated(token);
+        }
+        NavigationManager.NavigateTo("/", true);  // Navigate to home page upon successful login
+    }
+}

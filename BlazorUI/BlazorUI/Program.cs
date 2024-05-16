@@ -62,7 +62,7 @@ if (builder.Environment.IsDevelopment())
     builder.Services.AddScoped(sp =>
     {
         var client = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
-        client.BaseAddress = new Uri("http://localhost:5122"); // Adjust as needed
+        client.BaseAddress = new Uri("https://localhost:7100"); // Adjust as needed
         return client;
     });
 }

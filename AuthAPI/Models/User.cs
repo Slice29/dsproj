@@ -11,5 +11,6 @@ namespace AuthAPI.Models
     {
     public string favoriteVideoGame {get; set;}
     public bool isWeeb {get; set;}
+    public bool IsAzureADUser { get; set; }
     }
 }

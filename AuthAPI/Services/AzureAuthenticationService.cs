@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using static AuthAPI.Controller.ADAuthenticationController;
 
@@ -13,13 +13,14 @@ namespace AuthAPI.Services
     public class AzureAuthenticationService
     {
         private readonly IConfiguration _configuration;
-        public readonly HttpClient _client;
+        private readonly HttpClient _client;
 
         public AzureAuthenticationService(IConfiguration configuration, HttpClient client)
         {
             _configuration = configuration;
             _client = client;
         }
+
         public async Task<TokenResult> GetTokenFromCode(string code)
         {
             var clientId = _configuration["EntraId:ClientId"];
@@ -35,7 +36,7 @@ namespace AuthAPI.Services
                 ["redirect_uri"] = redirectUri,
                 ["grant_type"] = "authorization_code",
                 ["client_secret"] = clientSecret,
-                ["scope"] = "api://f898818f-3412-4426-87c5-535f62c403b4/Read offline_access"
+                ["scope"] = "https://graph.microsoft.com/User.Read offline_access openid"
             };
 
             var requestContent = new FormUrlEncodedContent(tokenRequest);
@@ -92,15 +93,41 @@ namespace AuthAPI.Services
                 return null;
             }
         }
+
+        public async Task<string> GetUserEmailFromToken(string accessToken)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var userProfile = JsonConvert.DeserializeObject<UserProfile>(jsonContent);
+                return userProfile.Mail ?? userProfile.UserPrincipalName;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new ApplicationException($"Failed to retrieve user email: {errorContent}");
+            }
+        }
+
+        #region Helper Classes
+        public class TokenResult
+        {
+            public string AccessToken { get; set; }
+            public string RefreshToken { get; set; }
+        }
+
+        public class UserProfile
+        {
+            [JsonProperty("mail")]
+            public string Mail { get; set; }
+
+            [JsonProperty("userPrincipalName")]
+            public string UserPrincipalName { get; set; }
+        }
+        #endregion
     }
-
-
-    #region Helper Classes
-    public class TokenResult
-    {
-        public string AccessToken { get; set; }
-        public string RefreshToken { get; set; }
-    }
-
-    #endregion
 }
