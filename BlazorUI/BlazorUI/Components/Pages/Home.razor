@@ -47,6 +47,7 @@
                 Console.WriteLine("User is not authenticated.");
             }
         }
+
     }
 
     private async Task ProcessSuccessfulLogin(string token)
@@ -60,5 +61,6 @@
 
         // Redirect to the home page without the token in the URL
         NavigationManager.NavigateTo("/", true);
+
     }
 }

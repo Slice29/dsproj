@@ -5,6 +5,7 @@
 @using Blazored.LocalStorage
 @inject ILocalStorageService LocalStorage
 @inject HttpClient Http
+@inject IJSRuntime JSRuntime
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -97,18 +98,34 @@
 
     private async Task Logout()
     {
-        var userLogin = new UserSearch();
-        if (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA") is not null)
-        {
-            userLogin.Email = (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA")).Trim('"', '\'');
-            var response = await Http.PostAsJsonAsync("api/login/logout", userLogin);
-        }
-
-        await Clear2FAState();
         if (AuthenticationStateProvider is ApiAuthenticationStateProvider authProvider)
         {
+            if (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA") is not null)
+            {
+                var userLogin = new UserSearch
+                    {
+                        Email = (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA")).Trim('"', '\'')
+                    };
+                var response = await Http.PostAsJsonAsync("api/login/logout", userLogin);
+                await Clear2FAState();
+            }
+            else if (await LocalStorage.GetItemAsStringAsync("authToken") is not null)
+            {
+                var userLogin = new UserSearch
+                    {
+                        Email = await authProvider.GetUserEmailAsync()
+                    };
+                var response = await Http.PostAsJsonAsync("api/login/logout", userLogin);
+                await Clear2FAState();
+            }
+
             await authProvider.MarkUserAsLoggedOut();
         }
+
+        // Clear all cookies
+        await JSRuntime.InvokeVoidAsync("clearAllCookies");
+
         NavigationManager.NavigateTo("/login", forceLoad: true);
     }
+
 }

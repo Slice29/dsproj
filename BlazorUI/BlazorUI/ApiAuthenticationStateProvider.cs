@@ -153,6 +153,26 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         return jsonToken.Claims;
     }
 
+    public async Task<string> GetUserEmailAsync()
+    {
+        var token = await _localStorage.GetItemAsStringAsync("authToken");
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
+
+        token = RemoveJsonFormatting(token);
+        if (!IsJwt(token))
+        {
+            return null;
+        }
+
+        var claims = ParseClaimsFromJwt(token);
+        var emailClaim = claims.FirstOrDefault(c => c.Type == "email");
+
+        return emailClaim?.Value;
+    }
+
     public async Task MarkUserAsAuthenticated(string token)
     {
         await _localStorage.SetItemAsStringAsync("authToken", token);
