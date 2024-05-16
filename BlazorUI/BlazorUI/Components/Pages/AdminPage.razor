@@ -7,6 +7,8 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
+@attribute [Authorize(Policy = "AdminOnly")]
+
 
 <h3>Admin Page</h3>
 

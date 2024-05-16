@@ -7,6 +7,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <h3>Login</h3>
 @if (!awaitingTwoFactorCode)
@@ -61,6 +62,7 @@ else
     private bool awaitingTwoFactorCode = false;
     private string loginResult;
     private string loginResultCssClass;
+    private int clientTimeZoneOffset;
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,6 +80,7 @@ else
                 twoFactorCode.Email = await LocalStorage.GetItemAsync<string>("userEmailFor2FA");
             }
         }
+        clientTimeZoneOffset = await JSRuntime.InvokeAsync<int>("getTimeZoneOffset");
     }
 
     private async Task HandleLogin()
@@ -159,12 +162,54 @@ else
         }
     }
 
+    private async Task HandleRateLimitResponse(string responseContent)
+    {
+        var rateLimitInfo = DeserializeRateLimitInfo(responseContent);
+        if (rateLimitInfo != null && DateTime.TryParse(rateLimitInfo.BanEndTime, out DateTime banEndTime))
+        {
+            // Adjust ban end time based on client's timezone offset
+            var adjustedBanEndTime = banEndTime.AddMinutes(-clientTimeZoneOffset);
+            var remainingTime = adjustedBanEndTime - DateTime.UtcNow;
+            var formattedTime = $"{remainingTime.Hours}h {remainingTime.Minutes}m {remainingTime.Seconds}s";
+
+            loginResult = $"{rateLimitInfo.Message} Please try again in {formattedTime}.";
+            loginResultCssClass = "text-danger";
+        }
+        else
+        {
+            loginResult = "Error parsing rate limit information.";
+            loginResultCssClass = "text-danger";
+        }
+    }
+
+    private RateLimitInfo DeserializeRateLimitInfo(string responseContent)
+    {
+        try
+        {
+            using (JsonDocument doc = JsonDocument.Parse(responseContent))
+            {
+                JsonElement root = doc.RootElement;
+                string message = root.GetProperty("message").GetString();
+                string banEndTime = root.GetProperty("banEndTime").GetString();
+                return new RateLimitInfo { Message = message, BanEndTime = banEndTime };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deserializing JSON: {ex.Message}");
+            return null;
+        }
+    }
+
     private async Task HandleTwoFactorAuthentication()
     {
         twoFactorCode.RememberClient = false;
         twoFactorCode.Email = userLogin.Email.Trim('"', '\'');
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/login/verify-2fa")
+        // Include client time zone offset in the request
+        var requestUri = $"api/login/verify-2fa?offset={clientTimeZoneOffset}";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
             {
                 Content = JsonContent.Create(twoFactorCode)
             };
@@ -194,9 +239,7 @@ else
                 loginResultCssClass = "text-danger";
                 break;
             case (HttpStatusCode)429:
-                var rateLimitInfo = JsonSerializer.Deserialize<RateLimitInfo>(responseContent);
-                loginResult = $"{rateLimitInfo.Message} Please try again after {rateLimitInfo.BanEndTime}.";
-                loginResultCssClass = "text-danger";
+                await HandleRateLimitResponse(responseContent);
                 break;
             default:
                 loginResult = "An error occurred during 2FA verification.";
@@ -204,6 +247,7 @@ else
                 break;
         }
     }
+
     private class LockoutInfo
     {
         public string Message { get; set; }
@@ -215,6 +259,7 @@ else
         public string Message { get; set; }
         public string BanEndTime { get; set; }
     }
+
 
     private async Task Clear2FAState()
     {

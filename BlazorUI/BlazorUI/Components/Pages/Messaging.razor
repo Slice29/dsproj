@@ -1,7 +1,8 @@
 ﻿@page "/placeholder"
 @using Contracts
+@using Microsoft.AspNetCore.Authorization
 @inject PlaceholderPublisher PlaceholderPublisher
-
+@attribute [Authorize(Policy = "AdminOnly")]
 <h3>Placeholder Response</h3>
 
 @if (responseMessage == null)

@@ -36,9 +36,10 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.Password.RequiredLength = 8;
     options.Password.RequireLowercase = true;
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.User.RequireUniqueEmail = true;
+    options.Lockout.AllowedForNewUsers = false;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.Zero;
+    options.Lockout.MaxFailedAccessAttempts = int.MaxValue;
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -115,7 +116,7 @@ builder.Services.AddRateLimiter(options => {
 builder.Services.AddSingleton(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<ExponentialBackoffRateLimiter>>();
-    return new ExponentialBackoffRateLimiter(permitLimit: 2, logger);
+    return new ExponentialBackoffRateLimiter(permitLimit: 5, logger);
 });
 
 
@@ -128,6 +129,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
     options.Cookie.SameSite = SameSiteMode.None;  // Adjust for your cross-site needs
     options.Cookie.SecurePolicy = CookieSecurePolicy.None;  // Secure cookies in production
+
 });
 
 
