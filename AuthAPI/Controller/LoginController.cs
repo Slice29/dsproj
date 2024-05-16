@@ -69,7 +69,6 @@ namespace AuthAPI.Controller
                 return StatusCode(400, "Invalid login attempt.");
             }
         }
-
         [HttpPost("verify-2fa")]
         public async Task<IActionResult> VerifyTwoFactorCode(TwoFactorVerification verification)
         {
@@ -81,9 +80,6 @@ namespace AuthAPI.Controller
             }
 
             var result = await _signInManager.TwoFactorSignInAsync("Email", verification.Code, isPersistent: false, rememberClient: false);
-            if (result.RequiresTwoFactor)
-                Console.WriteLine("Cere 2 factori");
-
             Console.WriteLine("UITE AICI " + result.ToString());
 
             if (result.Succeeded)
@@ -94,7 +90,13 @@ namespace AuthAPI.Controller
             }
             else if (result.IsLockedOut)
             {
-                return StatusCode(423, "Account is locked. Please try again later.");
+                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+                var lockoutInfo = new
+                {
+                    Message = "Account is locked. Please try again later.",
+                    LockoutEndTime = lockoutEnd?.ToString("o") // ISO 8601 format
+                };
+                return StatusCode(423, lockoutInfo);
             }
             else if (result.IsNotAllowed)
             {
@@ -105,7 +107,6 @@ namespace AuthAPI.Controller
                 return BadRequest("Invalid 2FA code.");
             }
         }
-
         [HttpPost("logout")]
         public async Task<IActionResult> Logout(UserLogout userLogout)
         {

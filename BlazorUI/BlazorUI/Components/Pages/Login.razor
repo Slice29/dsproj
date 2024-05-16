@@ -1,6 +1,8 @@
 ﻿@page "/login"
 @using Microsoft.AspNetCore.Components.Authorization
 @using Blazored.LocalStorage
+@using System.Net
+@using System.Text.Json
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILocalStorageService LocalStorage
@@ -145,24 +147,56 @@ else
         twoFactorCode.RememberClient = false;
         twoFactorCode.Email = userLogin.Email.Trim('"', '\'');
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/login/verify-2fa");
-        request.Content = JsonContent.Create(twoFactorCode);
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/login/verify-2fa")
+            {
+                Content = JsonContent.Create(twoFactorCode)
+            };
 
         var response = await Http.SendAsync(request);
-        var token = await response.Content.ReadAsStringAsync();
+        var responseContent = await response.Content.ReadAsStringAsync();
 
-        if (response.IsSuccessStatusCode)
+        switch (response.StatusCode)
         {
-            await Clear2FAState();
-            await ProcessSuccessfulLogin(token);
-            loginResult = "2FA Verification successful, logged in.";
-            loginResultCssClass = "text-success";
+            case HttpStatusCode.OK:
+                await Clear2FAState();
+                await ProcessSuccessfulLogin(responseContent);
+                loginResult = "2FA Verification successful, logged in.";
+                loginResultCssClass = "text-success";
+                break;
+            case HttpStatusCode.BadRequest:
+                loginResult = "Invalid 2FA code.";
+                loginResultCssClass = "text-danger";
+                break;
+            case HttpStatusCode.Unauthorized:
+                loginResult = "Login not allowed. Ensure the account has necessary permissions and is verified.";
+                loginResultCssClass = "text-danger";
+                break;
+            case (HttpStatusCode)423:
+                var lockoutInfo = JsonSerializer.Deserialize<LockoutInfo>(responseContent);
+                loginResult = $"{lockoutInfo.Message} Lockout ends at {lockoutInfo.LockoutEndTime}.";
+                loginResultCssClass = "text-danger";
+                break;
+            case (HttpStatusCode)429:
+                var rateLimitInfo = JsonSerializer.Deserialize<RateLimitInfo>(responseContent);
+                loginResult = $"{rateLimitInfo.Message} Please try again after {rateLimitInfo.BanEndTime}.";
+                loginResultCssClass = "text-danger";
+                break;
+            default:
+                loginResult = "An error occurred during 2FA verification.";
+                loginResultCssClass = "text-danger";
+                break;
         }
-        else
-        {
-            loginResult = "Invalid 2FA code.";
-            loginResultCssClass = "text-danger";
-        }
+    }
+    private class LockoutInfo
+    {
+        public string Message { get; set; }
+        public string LockoutEndTime { get; set; }
+    }
+
+    private class RateLimitInfo
+    {
+        public string Message { get; set; }
+        public string BanEndTime { get; set; }
     }
 
     private async Task Clear2FAState()
