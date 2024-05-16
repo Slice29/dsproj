@@ -17,7 +17,6 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-       
         <AuthorizeView>
             <Authorized>
                 <!-- Navigation items for authorized users -->
@@ -26,6 +25,19 @@
                         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Test
                     </NavLink>
                 </div>
+                @if (isAdmin)
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="/admin">
+                            <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Admin Interface
+                        </NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="/placeholder">
+                            <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Secret
+                        </NavLink>
+                    </div>
+                }
                 <div class="nav-item px-3">
                     <button class="nav-link btn btn-link" @onclick="Logout">
                         <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
@@ -50,12 +62,7 @@
 </div>
 
 @code {
-
-    private async Task Clear2FAState()
-    {
-        await LocalStorage.RemoveItemAsync("awaitingTwoFactorCode");
-        await LocalStorage.RemoveItemAsync("userEmailFor2FA");
-    }
+    private bool isAdmin;
     private bool collapseNavMenu = true;
 
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
@@ -65,18 +72,34 @@
         collapseNavMenu = !collapseNavMenu;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (AuthenticationStateProvider is ApiAuthenticationStateProvider authProvider)
+            {
+                isAdmin = await authProvider.IsUserAdminAsync();
+                StateHasChanged(); // Request a re-render
+            }
+        }
+    }
+
+    private async Task Clear2FAState()
+    {
+        await LocalStorage.RemoveItemAsync("awaitingTwoFactorCode");
+        await LocalStorage.RemoveItemAsync("userEmailFor2FA");
+    }
+
     private async Task Logout()
     {
         var userLogin = new UserSearch();
         if (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA") is not null)
         {
-            userLogin.Email = userLogin.Email = (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA")).Trim('"', '\'');
+            userLogin.Email = (await LocalStorage.GetItemAsStringAsync("userEmailFor2FA")).Trim('"', '\'');
             var response = await Http.PostAsJsonAsync("api/login/logout", userLogin);
         }
 
-
         await Clear2FAState();
-        // Assuming you are using an API or service to handle logout
         if (AuthenticationStateProvider is ApiAuthenticationStateProvider authProvider)
         {
             await authProvider.MarkUserAsLoggedOut();
