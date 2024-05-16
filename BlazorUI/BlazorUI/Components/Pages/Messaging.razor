@@ -1,0 +1,23 @@
+﻿@page "/placeholder"
+@using Contracts
+@inject PlaceholderPublisher PlaceholderPublisher
+
+<h3>Placeholder Response</h3>
+
+@if (responseMessage == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <p>@responseMessage.Response</p>
+}
+
+@code {
+    private PlaceholderResponse? responseMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        responseMessage = await PlaceholderPublisher.GetMyResponse("test message");
+    }
+}

@@ -3,7 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34316.72
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorUI", "BlazorUI\BlazorUI.csproj", "{2E5F0607-517B-48C3-B0E1-503FADF0E8A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorUI", "BlazorUI\BlazorUI.csproj", "{2E5F0607-517B-48C3-B0E1-503FADF0E8A3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contracts", "..\Contracts\Contracts.csproj", "{37F00CAA-45EB-4E85-869C-5218FBC14E09}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FakeAPI", "..\FakeAPI\FakeAPI.csproj", "{47B6CBB7-4722-49C6-870C-25AB2875D661}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthAPI", "..\AuthAPI\AuthAPI.csproj", "{09D39AD9-A0EC-47C2-8BCA-4F5CDE0FBC43}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,18 @@ Global
 		{2E5F0607-517B-48C3-B0E1-503FADF0E8A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E5F0607-517B-48C3-B0E1-503FADF0E8A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E5F0607-517B-48C3-B0E1-503FADF0E8A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37F00CAA-45EB-4E85-869C-5218FBC14E09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37F00CAA-45EB-4E85-869C-5218FBC14E09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37F00CAA-45EB-4E85-869C-5218FBC14E09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37F00CAA-45EB-4E85-869C-5218FBC14E09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47B6CBB7-4722-49C6-870C-25AB2875D661}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47B6CBB7-4722-49C6-870C-25AB2875D661}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47B6CBB7-4722-49C6-870C-25AB2875D661}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47B6CBB7-4722-49C6-870C-25AB2875D661}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09D39AD9-A0EC-47C2-8BCA-4F5CDE0FBC43}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09D39AD9-A0EC-47C2-8BCA-4F5CDE0FBC43}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09D39AD9-A0EC-47C2-8BCA-4F5CDE0FBC43}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09D39AD9-A0EC-47C2-8BCA-4F5CDE0FBC43}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

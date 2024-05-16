@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "F:\\Faculta Shit\\Anul IV\\Sem2\\ds\\AuthAPI\\AuthAPI.csproj": {}
+    "C:\\Users\\cdan\\dsproj\\AuthAPI\\AuthAPI.csproj": {}
   },
   "projects": {
-    "F:\\Faculta Shit\\Anul IV\\Sem2\\ds\\AuthAPI\\AuthAPI.csproj": {
+    "C:\\Users\\cdan\\dsproj\\AuthAPI\\AuthAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\Faculta Shit\\Anul IV\\Sem2\\ds\\AuthAPI\\AuthAPI.csproj",
+        "projectUniqueName": "C:\\Users\\cdan\\dsproj\\AuthAPI\\AuthAPI.csproj",
         "projectName": "AuthAPI",
-        "projectPath": "F:\\Faculta Shit\\Anul IV\\Sem2\\ds\\AuthAPI\\AuthAPI.csproj",
-        "packagesPath": "C:\\Users\\dancr\\.nuget\\packages\\",
-        "outputPath": "F:\\Faculta Shit\\Anul IV\\Sem2\\ds\\AuthAPI\\obj\\",
+        "projectPath": "C:\\Users\\cdan\\dsproj\\AuthAPI\\AuthAPI.csproj",
+        "packagesPath": "C:\\Users\\cdan\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\cdan\\dsproj\\AuthAPI\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "B:\\Visual Studio Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\dancr\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\cdan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -27,12 +27,18 @@
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "C:\\Program Files\\dotnet\\library-packs": {},
+          "http://nuget.sitefinity.com/nuget": {},
+          "https://api.nuget.org/v3/index.json": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "C:\\Users\\cdan\\dsproj\\Contracts\\Contracts.csproj": {
+                "projectPath": "C:\\Users\\cdan\\dsproj\\Contracts\\Contracts.csproj"
+              }
+            }
           }
         },
         "warningProperties": {
@@ -119,7 +125,69 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.104/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\cdan\\dsproj\\Contracts\\Contracts.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\cdan\\dsproj\\Contracts\\Contracts.csproj",
+        "projectName": "Contracts",
+        "projectPath": "C:\\Users\\cdan\\dsproj\\Contracts\\Contracts.csproj",
+        "packagesPath": "C:\\Users\\cdan\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\cdan\\dsproj\\Contracts\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\cdan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "http://nuget.sitefinity.com/nuget": {},
+          "https://api.nuget.org/v3/index.json": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.104/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

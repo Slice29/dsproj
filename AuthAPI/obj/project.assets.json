@@ -2104,6 +2104,16 @@
             "rid": "win"
           }
         }
+      },
+      "Contracts/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/Contracts.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Contracts.dll": {}
+        }
       }
     }
   },
@@ -5321,11 +5331,17 @@
         "system.windows.extensions.nuspec",
         "useSharedDesignerContext.txt"
       ]
+    },
+    "Contracts/1.0.0": {
+      "type": "project",
+      "path": "../Contracts/Contracts.csproj",
+      "msbuildProject": "../Contracts/Contracts.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net8.0": [
       "AutoMapper >= 13.0.1",
+      "Contracts >= 1.0.0",
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 8.0.3",
       "Microsoft.AspNetCore.Identity >= 2.2.0",
       "Microsoft.AspNetCore.Identity.EntityFrameworkCore >= 8.0.3",
@@ -5341,23 +5357,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\dancr\\.nuget\\packages\\": {},
-    "B:\\Visual Studio Shared\\NuGetPackages": {}
+    "C:\\Users\\cdan\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "F:\\Faculta Shit\\Anul IV\\Sem2\\ds\\AuthAPI\\AuthAPI.csproj",
+      "projectUniqueName": "C:\\Users\\cdan\\dsproj\\AuthAPI\\AuthAPI.csproj",
       "projectName": "AuthAPI",
-      "projectPath": "F:\\Faculta Shit\\Anul IV\\Sem2\\ds\\AuthAPI\\AuthAPI.csproj",
-      "packagesPath": "C:\\Users\\dancr\\.nuget\\packages\\",
-      "outputPath": "F:\\Faculta Shit\\Anul IV\\Sem2\\ds\\AuthAPI\\obj\\",
+      "projectPath": "C:\\Users\\cdan\\dsproj\\AuthAPI\\AuthAPI.csproj",
+      "packagesPath": "C:\\Users\\cdan\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\cdan\\dsproj\\AuthAPI\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "B:\\Visual Studio Shared\\NuGetPackages"
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\dancr\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\cdan\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -5367,12 +5383,18 @@
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "C:\\Program Files\\dotnet\\library-packs": {},
+        "http://nuget.sitefinity.com/nuget": {},
+        "https://api.nuget.org/v3/index.json": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "C:\\Users\\cdan\\dsproj\\Contracts\\Contracts.csproj": {
+              "projectPath": "C:\\Users\\cdan\\dsproj\\Contracts\\Contracts.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
@@ -5459,8 +5481,16 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.104/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1803",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "You are running the 'restore' operation with an 'HTTP' source, 'http://nuget.sitefinity.com/nuget'. Non-HTTPS access will be removed in a future version. Consider migrating to an 'HTTPS' source."
+    }
+  ]
 }

@@ -1,6 +1,8 @@
 using Blazored.LocalStorage;
 using Blazored.Toast;
+using BlazorUI;
 using BlazorUI.Components;
+using MassTransit;
 using Microsoft.AspNetCore.Components.Authorization;
 using System;
 using System.Net.Http;
@@ -17,6 +19,40 @@ builder.Services.AddBlazoredToast();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
+
+
+var config = builder.Configuration;
+
+bool IsRunningInContainer()
+{
+    return bool.TryParse(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), out var inContainer) && inContainer;
+}
+
+builder.Services.AddMassTransit(mt =>
+{
+    var rabbitMqHost = config.GetValue<string>("RabbitMQHost");
+    if (IsRunningInContainer()) rabbitMqHost = "rabbitmq";
+    var rabbitMqPort = config.GetValue<string>("RabbitMQPort");
+    var rabbitUri = new Uri($"rabbitmq://{rabbitMqHost.Trim('/')}:{rabbitMqPort}");
+    string redisString = "";
+    if (IsRunningInContainer())
+    {
+        redisString = "redis";
+    }
+    mt.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(rabbitUri);
+
+        cfg.ConfigureEndpoints(context);
+    });
+
+
+
+    mt.AddRequestClient<PlaceholderPublisher>();
+});
+
+
+builder.Services.AddScoped<PlaceholderPublisher>();
 
 // Set up HttpClient for different environments
 if (builder.Environment.IsDevelopment())
