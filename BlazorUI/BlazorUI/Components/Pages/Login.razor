@@ -118,11 +118,23 @@ else
 
     private async Task HandleErrorResponse(HttpResponseMessage response)
     {
+        var responseContent = await response.Content.ReadAsStringAsync();
+        LoginResponse loginResponse = null;
 
-        var responseContent = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        if (IsJson(responseContent))
+        {
+            try
+            {
+                loginResponse = JsonSerializer.Deserialize<LoginResponse>(responseContent);
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"JSON Deserialization Error: {ex.Message}");
+            }
+        }
+
         switch (response.StatusCode)
         {
-          
             case System.Net.HttpStatusCode.Forbidden:
                 loginResult = "Two-factor authentication required.";
                 loginResultCssClass = "text-warning";
@@ -135,8 +147,13 @@ else
                 loginResult = "Login not allowed. Ensure the account has necessary permissions and is verified.";
                 loginResultCssClass = "text-danger";
                 break;
+            case (HttpStatusCode)429:
+                var rateLimitInfo = JsonSerializer.Deserialize<RateLimitInfo>(responseContent);
+                loginResult = $"{rateLimitInfo.Message} Please try again after {rateLimitInfo.BanEndTime}.";
+                loginResultCssClass = "text-danger";
+                break;
             default:
-                loginResult = responseContent.Message ?? "Invalid login attempt.";
+                loginResult = loginResponse?.Message ?? "Invalid login attempt.";
                 loginResultCssClass = "text-danger";
                 break;
         }
@@ -223,5 +240,10 @@ else
     {
         public string Message { get; set; }
         public string Token { get; set; }
+    }
+    private bool IsJson(string content)
+    {
+        content = content.Trim();
+        return (content.StartsWith("{") && content.EndsWith("}")) || (content.StartsWith("[") && content.EndsWith("]"));
     }
 }
