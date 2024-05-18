@@ -11,6 +11,7 @@ namespace UserApiService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "AdminOnly")]
     public class AdminController : ControllerBase
     {
         private readonly UserManager<User> _userManager;

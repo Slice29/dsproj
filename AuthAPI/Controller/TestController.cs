@@ -10,7 +10,7 @@ namespace AuthAPI.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
+    [Authorize]
     public class TestController : ControllerBase
     {
         public TestController()

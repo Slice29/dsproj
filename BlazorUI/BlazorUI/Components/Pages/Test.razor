@@ -2,17 +2,17 @@
 @using Blazored.Toast.Services
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+@using Blazored.LocalStorage
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
-@* @attribute [Authorize] *@
+@inject ILocalStorageService LocalStorage
 
 <p>@message</p>
 
 @code {
     private string message = "Loading...";
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -28,7 +28,21 @@
 
         try
         {
-            HttpResponseMessage response = await Http.GetAsync("api/test");
+            // Retrieve the JWT token from local storage
+            var token = await LocalStorage.GetItemAsStringAsync("authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                ToastService.ShowError("Token not found. Please login again.");
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            // Create the HTTP request and add the Authorization header
+            var request = new HttpRequestMessage(HttpMethod.Get, "api/test");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            // Send the request
+            var response = await Http.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
                 message = await response.Content.ReadAsStringAsync();

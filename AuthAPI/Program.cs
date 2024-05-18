@@ -86,7 +86,6 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, jwtOptions =>
 {
@@ -120,25 +119,11 @@ builder.Services.AddSingleton(sp =>
 });
 
 
-builder.Services.ConfigureApplicationCookie(options =>
+builder.Services.AddAuthorizationCore(options =>
 {
-    options.Cookie.HttpOnly = false;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);  // Adjust based on your needs
-    options.LoginPath = "/api/login";  // Ensure you have a corresponding endpoint
-    options.LogoutPath = "/api/login/logout";
-    options.SlidingExpiration = true;
-    options.Cookie.SameSite = SameSiteMode.None;  // Adjust for your cross-site needs
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None;  // Secure cookies in production
-
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireClaim("admin", "true"));
 });
-
-
-
-builder.Services.AddAuthorization(options =>
-   {
-       options.AddPolicy("AdminPolicy", policy =>
-           policy.RequireRole("Admin"));
-   });
 
 builder.Services.AddControllers();
 var app = builder.Build();

@@ -3,12 +3,13 @@
 @using Blazored.Toast.Services
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+@using Blazored.LocalStorage
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
+@inject ILocalStorageService LocalStorage
 @attribute [Authorize(Policy = "AdminOnly")]
-
 
 <h3>Admin Page</h3>
 
@@ -31,9 +32,9 @@ else if (notFound)
 {
     <p>User not found.</p>
 }
+
 @code {
     private UserSearch userSearch = new UserSearch();
-    private string userEmail = "";
     private UserDto user;
     private List<string> userRoles = new List<string>();
     private bool userFound = false;
@@ -43,6 +44,12 @@ else if (notFound)
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+
+        if (!user.Identity.IsAuthenticated)
+        {
+            ToastService.ShowError("You are not authorized to view this page.");
+            NavigationManager.NavigateTo("/login");
+        }
     }
 
     protected async Task GetUserWithRoles()
@@ -52,21 +59,39 @@ else if (notFound)
         notFound = false;
         userFound = false;
 
-        var userResponse = await Http.GetFromJsonAsync<UserDto>($"api/admin/{userSearch.Email}");
-        if (userResponse == null)
+        // Retrieve the JWT token from local storage
+        var token = await LocalStorage.GetItemAsStringAsync("authToken");
+        if (string.IsNullOrEmpty(token))
+        {
+            ToastService.ShowError("Token not found. Please login again.");
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        // Create the HTTP request and add the Authorization header
+        var userRequest = new HttpRequestMessage(HttpMethod.Get, $"api/admin/{userSearch.Email}");
+        userRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var userResponse = await Http.SendAsync(userRequest);
+        if (userResponse.IsSuccessStatusCode)
+        {
+            user = await userResponse.Content.ReadFromJsonAsync<UserDto>();
+            userFound = true;
+        }
+        else
         {
             notFound = true;
             return;
         }
 
-        user = userResponse;
-        userFound = true;
+        // Create the HTTP request for roles and add the Authorization header
+        var rolesRequest = new HttpRequestMessage(HttpMethod.Get, $"api/admin/{userSearch.Email}/roles");
+        rolesRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var rolesResponse = await Http.GetFromJsonAsync<List<string>>($"api/admin/{userSearch.Email}/roles");
-        if (rolesResponse != null)
+        var rolesResponse = await Http.SendAsync(rolesRequest);
+        if (rolesResponse.IsSuccessStatusCode)
         {
-            userRoles = rolesResponse;
+            userRoles = await rolesResponse.Content.ReadFromJsonAsync<List<string>>();
         }
     }
-
 }
