@@ -41,6 +41,11 @@ namespace AuthAPI.Controller
                 return NotFound("User not found.");
             }
 
+            if (!await _userManager.IsEmailConfirmedAsync(user))
+            {
+                return StatusCode(401, "Email not confirmed. Please check your email to confirm your account.");
+            }
+
             var result = await _signInManager.PasswordSignInAsync(user, userLogin.Password, false, true);
             Console.WriteLine("Direct login: " + result.Succeeded);
             if (result.Succeeded)
@@ -56,19 +61,20 @@ namespace AuthAPI.Controller
                 await _emailSender.SendEmailAsync(user.Email, "Your security code", $"Your security code is: {token}");
                 return StatusCode(203, new { Message = "Two-factor authentication required. Please verify with the code sent to your email." });
             }
-            // else if (result.IsLockedOut)
-            // {
-            //     return StatusCode(423, "Account is locked. Please try again later.");
-            // }
-            // else if (result.IsNotAllowed)
-            // {
-            //     return StatusCode(401, "Login not allowed. Ensure the account has necessary permissions and is verified.");
-            // }
+            else if (result.IsLockedOut)
+            {
+                return StatusCode(423, "Account is locked. Please try again later.");
+            }
+            else if (result.IsNotAllowed)
+            {
+                return StatusCode(401, "Login not allowed. Ensure the account has necessary permissions and is verified.");
+            }
             else
             {
                 return StatusCode(400, "Invalid login attempt.");
             }
         }
+
         [HttpPost("verify-2fa")]
         public async Task<IActionResult> VerifyTwoFactorCode(TwoFactorVerification verification)
         {
@@ -77,6 +83,11 @@ namespace AuthAPI.Controller
             if (user == null)
             {
                 return NotFound("User not found.");
+            }
+
+            if (!await _userManager.IsEmailConfirmedAsync(user))
+            {
+                return StatusCode(401, "Email not confirmed. Please check your email to confirm your account.");
             }
 
             var result = await _signInManager.TwoFactorSignInAsync("Email", verification.Code, isPersistent: false, rememberClient: false);
@@ -107,6 +118,7 @@ namespace AuthAPI.Controller
                 return BadRequest("Invalid 2FA code.");
             }
         }
+
         [HttpPost("logout")]
         public async Task<IActionResult> Logout(UserLogout userLogout)
         {
