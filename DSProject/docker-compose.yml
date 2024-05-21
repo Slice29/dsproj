@@ -1,0 +1,74 @@
+version: "3"
+services:
+  auth:
+    container_name: AuthService
+    build: 
+      context: ./AuthAPI
+      dockerfile: ./Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+    environment:
+      ECT_JWT_KEY: "5et3c_@stron0my-vs-B@RB3NHe1MER?"
+      ECT_JWT_ISSUER: "ecomTransit"
+      ECT_JWT_EXPIRE_DAYS: "7"
+      DOTNET_RUNNING_IN_CONTAINER: true
+      ASPNETCORE_HTTP_PORTS: 8080
+      # ASPNETCORE_URLS: "0.0.0.0:8080"
+
+  fake:
+    container_name: FakeAPI
+    build: 
+      context: ./FakeAPI
+      dockerfile: ./Dockerfile
+    ports:
+      - "5206:8080"
+    environment:
+      ECT_JWT_KEY: "5et3c_@stron0my-vs-B@RB3NHe1MER?"
+      ECT_JWT_ISSUER: "ecomTransit"
+      ECT_JWT_EXPIRE_DAYS: "7"
+      DOTNET_RUNNING_IN_CONTAINER: true
+      ASPNETCORE_HTTP_PORTS: 8080
+    depends_on:
+      - rabbitmq
+
+  blazor:
+    container_name: BlazorUI
+    build: 
+      context: ./BlazorUI
+      dockerfile: ./Dockerfile
+    ports:
+      - "5250:8080"
+    environment:
+      ECT_JWT_KEY: "5et3c_@stron0my-vs-B@RB3NHe1MER?"
+      ECT_JWT_ISSUER: "ecomTransit"
+      ECT_JWT_EXPIRE_DAYS: "7"
+      DOTNET_RUNNING_IN_CONTAINER: "true"
+    depends_on:
+      - rabbitmq
+      - auth
+
+  rabbitmq:
+    image: masstransit/rabbitmq:latest
+    container_name: Rabbit
+    ports:
+      - "5672:5672"
+      - "15673:15672"
+      - "15692:15692"
+
+
+  db:
+    container_name: dsProj
+    image: mcr.microsoft.com/mssql/server:2022-preview-ubuntu-22.04
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "NewPassword1!"
+      MSSQL_PID: "Express"
+    volumes:
+      - inventory_data:/var/opt/mssql
+
+volumes:
+  inventory_data:

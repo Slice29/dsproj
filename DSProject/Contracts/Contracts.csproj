@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+	  <RootNamespace>Contracts</RootNamespace>
+	  <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+	<PropertyGroup>
+		<PackageId>ContractsDSProj</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Cristi Dan</Authors>
+		<Description>A description of your package</Description>
+		<PackageTags>tag1;tag2</PackageTags>
+		<RepositoryUrl>https://github.com/your-repo-url</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+	</PropertyGroup>
+
+</Project>
